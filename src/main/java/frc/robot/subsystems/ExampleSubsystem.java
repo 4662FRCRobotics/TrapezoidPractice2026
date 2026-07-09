@@ -9,10 +9,13 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
 
 	import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Pounds;
-
+	import edu.wpi.first.units.measure.Angle; 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 
@@ -100,6 +103,36 @@ public class ExampleSubsystem extends SubsystemBase {
           /* one-time action goes here */
         });
   }
+
+  	  /**
+   * Run the arm to the given angle, does not stop when the arm reaches the setpoint.
+   * @param angle Angle to go to.
+   * @return A command.
+   */
+  public Command run(Angle angle) { 
+    return arm.run(angle);}
+  
+  /**
+   * Run the arm to the given angle, ends the command when the arm reaches the setpoint within tolerance.
+   * @param angle Angle to go to.
+   * @param tolerance Angle tolerance for completion.
+   * @return A Command
+   */
+  public Command runTo(Angle angle, Angle tolerance) { 
+    return arm.runTo(angle, tolerance);}
+  
+  /**
+   * Set arm closed loop controller to go to the specified mechanism position.
+   * @param angle Angle to go to.
+   */
+  public void setAngleSetpoint(Angle angle) { arm.setMechanismPositionSetpoint(angle); }
+
+  /**
+   * Move the arm up and down.
+   * @param dutycycle [-1, 1] speed to set the arm too.
+   */
+  public Command set(double dutycycle) { return arm.set(dutycycle);}
+
 
   /**
    * An example method querying a boolean state of the subsystem (for example, a
