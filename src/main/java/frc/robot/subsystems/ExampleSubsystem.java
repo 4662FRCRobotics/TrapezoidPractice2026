@@ -17,6 +17,9 @@ import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Pounds;
 	import edu.wpi.first.units.measure.Angle; 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.LimitSwitchConfig.Behavior;
+import com.revrobotics.spark.config.LimitSwitchConfig.Type;
+import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
@@ -38,18 +41,47 @@ import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 
 public class ExampleSubsystem extends SubsystemBase {
 
-  private SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
+  private SparkMaxConfig smartMaxConfig;
+
+  private SmartMotorControllerConfig smcConfig;
+
+  // Vendor motor controller object
+  private SparkMax spark;
+
+  // Create our SmartMotorController from our Spark and config with the NEO.
+  private SmartMotorController sparkSmartMotorController;
+
+   private ArmConfig armCfg;
+
+  // Arm Mechanism
+  private Arm arm;
+
+  /** Creates a new ExampleSubsystem. */
+  public ExampleSubsystem() {
+
+    smartMaxConfig = new SparkMaxConfig();
+
+      smartMaxConfig.limitSwitch
+      .forwardLimitSwitchType(Type.kNormallyOpen)
+      .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+      .reverseLimitSwitchType(Type.kNormallyOpen)
+      .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+
+    smcConfig = new SmartMotorControllerConfig(this)
       .withControlMode(ControlMode.CLOSED_LOOP)
       // Feedback Constants (PID Constants)
-      .withClosedLoopController(50, 0, 0)
+      //kP 1520, kI 0, kD 2600
+      //from recalc
+      .withClosedLoopController(5.501, 0, .016)
       .withTrapezoidalProfile(DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
-      .withSimClosedLoopController(50, 0, 0)
+      .withSimClosedLoopController(10, 0, 0)
       // Feedforward Constants
-      .withFeedforward(new ArmFeedforward(0, 0, 0))
-      .withSimFeedforward(new ArmFeedforward(0, 0, 0))
+      //from recalc
+      .withFeedforward(new ArmFeedforward(.13, 0.031,.001 , .34 ))
+      //.withFeedforward(new ArmFeedforward(0.14, 0, 0))
+      .withSimFeedforward(new ArmFeedforward(0.14, 0, 0))
       // Telemetry name and verbosity level
       .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
-      // Gearing from the motor rotor to final shaft.
       // In this example GearBox.fromReductionStages(3,4) is the same as
       // GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to
       // your motor.
@@ -63,31 +95,27 @@ public class ExampleSubsystem extends SubsystemBase {
       .withClosedLoopRampRate(Seconds.of(0.25))
       .withOpenLoopRampRate(Seconds.of(0.25))
 
+      .withVendorConfig(smartMaxConfig)
+
        // Starting position is where your arm starts
-  .withStartingPosition(Degrees.of(-5))
+  .withStartingPosition(Degrees.of(85))
   // Soft limit is applied to the SmartMotorControllers PID
-  .withSoftLimits(Degrees.of(-20), Degrees.of(10));
+  .withSoftLimits(Degrees.of(85), Degrees.of(170));
 
-  // Vendor motor controller object
-  private SparkMax spark = new SparkMax(30, MotorType.kBrushless);
+    spark = new SparkMax(30, MotorType.kBrushless);
 
-  // Create our SmartMotorController from our Spark and config with the NEO.
-  private SmartMotorController sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), smcConfig);
+    sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), smcConfig);
 
-   private ArmConfig armCfg = new ArmConfig()
+    armCfg = new ArmConfig()
    .withSmartMotorController(sparkSmartMotorController)
   // Hard limit is applied to the simulation.
-  .withHardLimits(Degrees.of(-30), Degrees.of(40))
+  .withHardLimits(Degrees.of(84), Degrees.of(171))
   // Length and mass of your arm for sim.
-  .withLength(Feet.of(3))
+  .withLength(Feet.of(1.25))
   // Telemetry name and verbosity for the arm.
   .withTelemetry("Arm", TelemetryVerbosity.HIGH);
+    arm = new Arm(armCfg);
 
-  // Arm Mechanism
-  private Arm arm = new Arm(armCfg);
-
-  /** Creates a new ExampleSubsystem. */
-  public ExampleSubsystem() {
   }
 
   /**

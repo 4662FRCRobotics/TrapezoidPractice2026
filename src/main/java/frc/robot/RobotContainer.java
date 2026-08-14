@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import static edu.wpi.first.units.Units.Degrees;
 
+import edu.wpi.first.wpilibj.DataLogManager;
+
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
  * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
@@ -29,10 +31,13 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+
+    DataLogManager.start();
+
     // Configure the trigger bindings
     configureBindings();
      // Set the default command to force the arm to go to 0.
-    m_exampleSubsystem.setDefaultCommand(m_exampleSubsystem.run(Degrees.of(0)));
+   // m_exampleSubsystem.setDefaultCommand(m_exampleSubsystem.run(Degrees.of(0)));
   }
 
   /**
@@ -47,12 +52,12 @@ public class RobotContainer {
   private void configureBindings() {
 	    // Schedule `run` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    m_driverController.a().whileTrue(m_exampleSubsystem.run(Degrees.of(-5)));
-    m_driverController.b().whileTrue(m_exampleSubsystem.run(Degrees.of(15)));
+    m_driverController.leftTrigger().onTrue(m_exampleSubsystem.run(Degrees.of(170)));
+    m_driverController.leftBumper().onTrue(m_exampleSubsystem.run(Degrees.of(85)));
     // Schedule `set` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    m_driverController.x().whileTrue(m_exampleSubsystem.set(0.3));
-    m_driverController.y().whileTrue(m_exampleSubsystem.set(-0.3));
+    //m_driverController.x().onTrue(m_exampleSubsystem.set(0.3));
+    //m_driverController.y().onTrue(m_exampleSubsystem.set(-0.3));
   }
 
   /**

@@ -1,0 +1,8 @@
+{
+  "download": {
+    "deleteAfter": false,
+    "localDir": "C:\\Users\\bytes\\Downloads",
+    "remoteDir": "/media/sda1/logs",
+    "serverTeam": "10.46.62.2"
+  }
+}
