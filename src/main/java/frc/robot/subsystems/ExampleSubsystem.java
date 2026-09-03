@@ -13,13 +13,15 @@ import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
-	import static edu.wpi.first.units.Units.Feet;
+import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Pounds;
-	import edu.wpi.first.units.measure.Angle; 
+import edu.wpi.first.units.measure.Angle;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.LimitSwitchConfig.Behavior;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.AbsoluteEncoder;
+import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkMax;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
@@ -31,7 +33,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import yams.mechanisms.config.ArmConfig;
 import yams.mechanisms.positional.Arm;
-
+import yams.gearing.GearBox;
 import yams.gearing.MechanismGearing;
 import yams.mechanisms.SmartMechanism;
 import yams.motorcontrollers.SmartMotorControllerConfig;
@@ -42,6 +44,7 @@ import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 public class ExampleSubsystem extends SubsystemBase {
 
   private SparkMaxConfig smartMaxConfig;
+  private SparkAbsoluteEncoder sparkAbsEncoder;
 
   private SmartMotorControllerConfig smcConfig;
 
@@ -51,7 +54,7 @@ public class ExampleSubsystem extends SubsystemBase {
   // Create our SmartMotorController from our Spark and config with the NEO.
   private SmartMotorController sparkSmartMotorController;
 
-   private ArmConfig armCfg;
+  private ArmConfig armCfg;
 
   // Arm Mechanism
   private Arm arm;
@@ -60,62 +63,72 @@ public class ExampleSubsystem extends SubsystemBase {
   public ExampleSubsystem() {
 
     smartMaxConfig = new SparkMaxConfig();
+    spark = new SparkMax(30, MotorType.kBrushless);
+    sparkAbsEncoder = spark.getAbsoluteEncoder();
 
-      smartMaxConfig.limitSwitch
-      .forwardLimitSwitchType(Type.kNormallyOpen)
-      .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
-      .reverseLimitSwitchType(Type.kNormallyOpen)
-      .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+    smartMaxConfig.limitSwitch
+        .forwardLimitSwitchType(Type.kNormallyOpen)
+        .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
+        .reverseLimitSwitchType(Type.kNormallyOpen)
+        .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
 
     smcConfig = new SmartMotorControllerConfig(this)
-      .withControlMode(ControlMode.CLOSED_LOOP)
-      // Feedback Constants (PID Constants)
-      //kP 1520, kI 0, kD 2600
-      //from recalc
-      .withClosedLoopController(5.501, 0, .016)
-      .withTrapezoidalProfile(DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
-      .withSimClosedLoopController(10, 0, 0)
-      // Feedforward Constants
-      //from recalc
-      .withFeedforward(new ArmFeedforward(.13, 0.031,.001 , .34 ))
-      //.withFeedforward(new ArmFeedforward(0.14, 0, 0))
-      .withSimFeedforward(new ArmFeedforward(0.14, 0, 0))
-      // Telemetry name and verbosity level
-      .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
-      // In this example GearBox.fromReductionStages(3,4) is the same as
-      // GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to
-      // your motor.
-      // You could also use .withGearing(12) which does the same thing.
-      // .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
-      .withGearing(new MechanismGearing(15))
-      // Motor properties to prevent over currenting.
-      .withMotorInverted(false)
-      .withIdleMode(MotorMode.BRAKE)
-      .withStatorCurrentLimit(Amps.of(40))
-      .withClosedLoopRampRate(Seconds.of(0.25))
-      .withOpenLoopRampRate(Seconds.of(0.25))
+        .withControlMode(ControlMode.CLOSED_LOOP)
+        // Feedback Constants (PID Constants)
+        // kP 1520, kI 0, kD 2600
+        // from recalc
+        .withClosedLoopController(5.501, 0, .016)
+        .withTrapezoidalProfile(DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+        .withSimClosedLoopController(10, 0, 0)
+        // Feedforward Constants
+        // from recalc
+        .withFeedforward(new ArmFeedforward(.02, 0.2, .00, .0))
+        // .withFeedforward(new ArmFeedforward(0.14, 0, 0))
+        .withSimFeedforward(new ArmFeedforward(0.14, 0, 0))
+        // Telemetry name and verbosity level
+        .withExternalEncoder(sparkAbsEncoder)
+        .withExternalEncoderDiscontinuityPoint(Degrees.of(0))
+        .withExternalEncoderZeroOffset(Degrees.of(0))
+        //.withExternalEncoderConversionFactor(360)
+        .withExternalEncoderInverted(false)
+        .withUseExternalFeedbackEncoder(true)
+        .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
+        // In this example GearBox.fromReductionStages(3,4) is the same as
+        // GearBox.fromStages("3:1","4:1") which corresponds to the gearbox attached to
+        // your motor.
+        // You could also use .withGearing(12) which does the same thing.
+        // .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
+        //.withGearing(new MechanismGearing(15))
+        .withGearing(new MechanismGearing(GearBox.fromReductionStages(5, 3, (32 / 20))))
+        // Motor properties to prevent over currenting.
+        .withMotorInverted(false)
+        .withIdleMode(MotorMode.BRAKE)
+        .withStatorCurrentLimit(Amps.of(40))
+        .withClosedLoopRampRate(Seconds.of(0.25))
+        .withOpenLoopRampRate(Seconds.of(0.25))
 
-      .withVendorConfig(smartMaxConfig)
+        .withVendorConfig(smartMaxConfig)
 
-       // Starting position is where your arm starts
-  .withStartingPosition(Degrees.of(85))
-  // Soft limit is applied to the SmartMotorControllers PID
-  .withSoftLimits(Degrees.of(85), Degrees.of(170));
+        // Starting position is where your arm starts
+        //.withStartingPosition(Degrees.of(85))
+        // Soft limit is applied to the SmartMotorControllers PID
+        .withSoftLimits(Degrees.of(82), Degrees.of(175));
 
-    spark = new SparkMax(30, MotorType.kBrushless);
+    
 
     sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), smcConfig);
 
     armCfg = new ArmConfig()
-   .withSmartMotorController(sparkSmartMotorController)
-  // Hard limit is applied to the simulation.
-  .withHardLimits(Degrees.of(84), Degrees.of(171))
-  // Length and mass of your arm for sim.
-  .withLength(Feet.of(1.25))
-  // Telemetry name and verbosity for the arm.
-  .withTelemetry("Arm", TelemetryVerbosity.HIGH);
+        .withSmartMotorController(sparkSmartMotorController)
+        // Hard limit is applied to the simulation.
+        .withHardLimits(Degrees.of(80), Degrees.of(175))
+        // Length and mass of your arm for sim.
+        .withLength(Feet.of(1.25))
+        // Telemetry name and verbosity for the arm.
+        .withTelemetry("Arm", TelemetryVerbosity.HIGH);
     arm = new Arm(armCfg);
 
+    sparkSmartMotorController.setEncoderPosition(Degrees.of(sparkAbsEncoder.getPosition() * 360));
   }
 
   /**
@@ -132,35 +145,46 @@ public class ExampleSubsystem extends SubsystemBase {
         });
   }
 
-  	  /**
-   * Run the arm to the given angle, does not stop when the arm reaches the setpoint.
+  /**
+   * Run the arm to the given angle, does not stop when the arm reaches the
+   * setpoint.
+   * 
    * @param angle Angle to go to.
    * @return A command.
    */
-  public Command run(Angle angle) { 
-    return arm.run(angle);}
-  
+  public Command run(Angle angle) {
+    return arm.run(angle);
+  }
+
   /**
-   * Run the arm to the given angle, ends the command when the arm reaches the setpoint within tolerance.
-   * @param angle Angle to go to.
+   * Run the arm to the given angle, ends the command when the arm reaches the
+   * setpoint within tolerance.
+   * 
+   * @param angle     Angle to go to.
    * @param tolerance Angle tolerance for completion.
    * @return A Command
    */
-  public Command runTo(Angle angle, Angle tolerance) { 
-    return arm.runTo(angle, tolerance);}
-  
+  public Command runTo(Angle angle, Angle tolerance) {
+    return arm.runTo(angle, tolerance);
+  }
+
   /**
    * Set arm closed loop controller to go to the specified mechanism position.
+   * 
    * @param angle Angle to go to.
    */
-  public void setAngleSetpoint(Angle angle) { arm.setMechanismPositionSetpoint(angle); }
+  public void setAngleSetpoint(Angle angle) {
+    arm.setMechanismPositionSetpoint(angle);
+  }
 
   /**
    * Move the arm up and down.
+   * 
    * @param dutycycle [-1, 1] speed to set the arm too.
    */
-  public Command set(double dutycycle) { return arm.set(dutycycle);}
-
+  public Command set(double dutycycle) {
+    return arm.set(dutycycle);
+  }
 
   /**
    * An example method querying a boolean state of the subsystem (for example, a
@@ -176,14 +200,14 @@ public class ExampleSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-      // This method will be called once per scheduler run
+    // This method will be called once per scheduler run
     arm.updateTelemetry();
   }
 
   @Override
   public void simulationPeriodic() {
     // This method will be called once per scheduler run during simulation
-     // This method will be called once per scheduler run during simulation
+    // This method will be called once per scheduler run during simulation
     arm.simIterate();
   }
 }
