@@ -16,6 +16,8 @@ import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Pounds;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Voltage;
+
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.LimitSwitchConfig.Behavior;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
@@ -62,32 +64,35 @@ public class ExampleSubsystem extends SubsystemBase {
   /** Creates a new ExampleSubsystem. */
   public ExampleSubsystem() {
 
-    smartMaxConfig = new SparkMaxConfig();
+    //smartMaxConfig = new SparkMaxConfig();
     spark = new SparkMax(30, MotorType.kBrushless);
     sparkAbsEncoder = spark.getAbsoluteEncoder();
 
-    smartMaxConfig.limitSwitch
+    /*smartMaxConfig.limitSwitch
         .forwardLimitSwitchType(Type.kNormallyOpen)
         .forwardLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor)
         .reverseLimitSwitchType(Type.kNormallyOpen)
         .reverseLimitSwitchTriggerBehavior(Behavior.kStopMovingMotor);
+        */
 
     smcConfig = new SmartMotorControllerConfig(this)
         .withControlMode(ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
         // kP 1520, kI 0, kD 2600
         // from recalc
-        .withClosedLoopController(5.501, 0, .016)
-        .withTrapezoidalProfile(DegreesPerSecond.of(90), DegreesPerSecondPerSecond.of(45))
+        .withClosedLoopController(0.3, 0, .2)
+        // not allowed for trapezoidal
+        //.withClosedLoopControllerMaximumVoltage(Voltage.ofBaseUnits(3, Volts))
+        .withTrapezoidalProfile(DegreesPerSecond.of(150), DegreesPerSecondPerSecond.of(90))
         .withSimClosedLoopController(10, 0, 0)
         // Feedforward Constants
         // from recalc
-        .withFeedforward(new ArmFeedforward(.02, 0.2, .00, .0))
+        .withFeedforward(new ArmFeedforward(0.02, 0.14, .00, .0))
         // .withFeedforward(new ArmFeedforward(0.14, 0, 0))
         .withSimFeedforward(new ArmFeedforward(0.14, 0, 0))
         // Telemetry name and verbosity level
         .withExternalEncoder(sparkAbsEncoder)
-        .withExternalEncoderDiscontinuityPoint(Degrees.of(0))
+        .withExternalEncoderDiscontinuityPoint(Degrees.of(360))
         .withExternalEncoderZeroOffset(Degrees.of(0))
         //.withExternalEncoderConversionFactor(360)
         .withExternalEncoderInverted(false)
@@ -98,8 +103,9 @@ public class ExampleSubsystem extends SubsystemBase {
         // your motor.
         // You could also use .withGearing(12) which does the same thing.
         // .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
-        //.withGearing(new MechanismGearing(15))
-        .withGearing(new MechanismGearing(GearBox.fromReductionStages(5, 3, (32 / 20))))
+        //.withGearing(new MechanismGearing(15*(18/32)))
+        //.withGearing(new MechanismGearing(GearBox.fromReductionStages(5.0, 3.0, (32.0 / 18.0))))
+        .withGearing(1)
         // Motor properties to prevent over currenting.
         .withMotorInverted(false)
         .withIdleMode(MotorMode.BRAKE)
@@ -107,12 +113,13 @@ public class ExampleSubsystem extends SubsystemBase {
         .withClosedLoopRampRate(Seconds.of(0.25))
         .withOpenLoopRampRate(Seconds.of(0.25))
 
-        .withVendorConfig(smartMaxConfig)
+        //is this clobbering something .withVendorConfig(smartMaxConfig)
 
         // Starting position is where your arm starts
         //.withStartingPosition(Degrees.of(85))
         // Soft limit is applied to the SmartMotorControllers PID
-        .withSoftLimits(Degrees.of(82), Degrees.of(175));
+        //.withSoftLimits(Degrees.of(82), Degrees.of(175))
+        ;
 
     
 
