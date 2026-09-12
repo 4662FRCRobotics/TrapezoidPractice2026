@@ -9,20 +9,13 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Second;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
 
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Pounds;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Voltage;
+import static edu.wpi.first.units.Units.Rotation;
 
+import edu.wpi.first.units.measure.Angle;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.LimitSwitchConfig.Behavior;
-import com.revrobotics.spark.config.LimitSwitchConfig.Type;
-import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkMax;
 
@@ -32,12 +25,11 @@ import yams.motorcontrollers.SmartMotorController;
 import yams.motorcontrollers.local.SparkWrapper;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
+import frc.robot.Constants.ArmConstants;
 import yams.mechanisms.config.ArmConfig;
 import yams.mechanisms.positional.Arm;
 import yams.gearing.GearBox;
 import yams.gearing.MechanismGearing;
-import yams.mechanisms.SmartMechanism;
 import yams.motorcontrollers.SmartMotorControllerConfig;
 import yams.motorcontrollers.SmartMotorControllerConfig.ControlMode;
 import yams.motorcontrollers.SmartMotorControllerConfig.MotorMode;
@@ -45,7 +37,7 @@ import yams.motorcontrollers.SmartMotorControllerConfig.TelemetryVerbosity;
 
 public class ExampleSubsystem extends SubsystemBase {
 
-  private SparkMaxConfig smartMaxConfig;
+  //private SparkMaxConfig smartMaxConfig;
   private SparkAbsoluteEncoder sparkAbsEncoder;
 
   private SmartMotorControllerConfig smcConfig;
@@ -79,22 +71,22 @@ public class ExampleSubsystem extends SubsystemBase {
         .withControlMode(ControlMode.CLOSED_LOOP)
         // Feedback Constants (PID Constants)
         // kP 1520, kI 0, kD 2600
-        // from recalc
-        .withClosedLoopController(0.3, 0, .2)
+        // from playing
+        .withClosedLoopController(2, 0, .2)
         // not allowed for trapezoidal
         //.withClosedLoopControllerMaximumVoltage(Voltage.ofBaseUnits(3, Volts))
         .withTrapezoidalProfile(DegreesPerSecond.of(150), DegreesPerSecondPerSecond.of(90))
         .withSimClosedLoopController(10, 0, 0)
         // Feedforward Constants
         // from recalc
-        .withFeedforward(new ArmFeedforward(0.02, 0.14, .00, .0))
+        .withFeedforward(new ArmFeedforward(0.02, 0.15, .00, .0))
         // .withFeedforward(new ArmFeedforward(0.14, 0, 0))
-        .withSimFeedforward(new ArmFeedforward(0.14, 0, 0))
+        .withSimFeedforward(new ArmFeedforward(0.135, 0, 0))
         // Telemetry name and verbosity level
         .withExternalEncoder(sparkAbsEncoder)
-        .withExternalEncoderDiscontinuityPoint(Degrees.of(360))
-        .withExternalEncoderZeroOffset(Degrees.of(0))
-        //.withExternalEncoderConversionFactor(360)
+        .withExternalEncoderDiscontinuityPoint(Rotation.of(0.5 ))
+        .withExternalEncoderZeroOffset(Degrees.of(-15.0))
+        //.withExternalEncoderConversionFactor(360.0) // not found now
         .withExternalEncoderInverted(false)
         .withUseExternalFeedbackEncoder(true)
         .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
@@ -103,9 +95,8 @@ public class ExampleSubsystem extends SubsystemBase {
         // your motor.
         // You could also use .withGearing(12) which does the same thing.
         // .withGearing(new MechanismGearing(GearBox.fromReductionStages(3, 4)))
-        //.withGearing(new MechanismGearing(15*(18/32)))
-        //.withGearing(new MechanismGearing(GearBox.fromReductionStages(5.0, 3.0, (32.0 / 18.0))))
-        .withGearing(1)
+        .withGearing(new MechanismGearing(GearBox.fromReductionStages(5.0, 3.0, (32.0 / 18.0))))
+        .withExternalEncoderGearing(ArmConstants.kAbsEncGearReduction)
         // Motor properties to prevent over currenting.
         .withMotorInverted(false)
         .withIdleMode(MotorMode.BRAKE)
@@ -126,16 +117,17 @@ public class ExampleSubsystem extends SubsystemBase {
     sparkSmartMotorController = new SparkWrapper(spark, DCMotor.getNEO(1), smcConfig);
 
     armCfg = new ArmConfig()
-        .withSmartMotorController(sparkSmartMotorController)
         // Hard limit is applied to the simulation.
         .withHardLimits(Degrees.of(80), Degrees.of(175))
         // Length and mass of your arm for sim.
         .withLength(Feet.of(1.25))
         // Telemetry name and verbosity for the arm.
         .withTelemetry("Arm", TelemetryVerbosity.HIGH);
-    arm = new Arm(armCfg);
+        
+    arm = new Arm(armCfg, sparkSmartMotorController);
 
-    sparkSmartMotorController.setEncoderPosition(Degrees.of(sparkAbsEncoder.getPosition() * 360));
+    // apparently YAMS has a routine to seed the relative encoder in their config process
+    //sparkSmartMotorController.setEncoderPosition(Degrees.of(sparkAbsEncoder.getPosition() * 360 * ArmConstants.kRelEncGearReduction));
   }
 
   /**

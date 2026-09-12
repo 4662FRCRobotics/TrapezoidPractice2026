@@ -16,4 +16,9 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
   }
+
+  public static class ArmConstants {
+    public static final double kRelEncGearReduction = 5.0 * 3.0 * 32.0 / 18.0;
+    public static final double kAbsEncGearReduction = 1.0;
+  }
 }
