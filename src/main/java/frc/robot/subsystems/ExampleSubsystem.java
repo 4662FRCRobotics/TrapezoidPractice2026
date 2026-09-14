@@ -9,12 +9,14 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.DegreesPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
-
+import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Rotation;
 
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Voltage;
+
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkMax;
@@ -73,8 +75,7 @@ public class ExampleSubsystem extends SubsystemBase {
         // kP 1520, kI 0, kD 2600
         // from playing
         .withClosedLoopController(2, 0, .2)
-        // not allowed for trapezoidal
-        //.withClosedLoopControllerMaximumVoltage(Voltage.ofBaseUnits(3, Volts))
+        // taking this out takes out maxmotion and uses roborio position
         .withTrapezoidalProfile(DegreesPerSecond.of(150), DegreesPerSecondPerSecond.of(90))
         .withSimClosedLoopController(10, 0, 0)
         // Feedforward Constants
@@ -83,6 +84,8 @@ public class ExampleSubsystem extends SubsystemBase {
         // .withFeedforward(new ArmFeedforward(0.14, 0, 0))
         .withSimFeedforward(new ArmFeedforward(0.135, 0, 0))
         // Telemetry name and verbosity level
+        // not allowed for trapezoidal
+        //.withClosedLoopControllerMaximumVoltage(Voltage.ofBaseUnits(2, Volts))
         .withExternalEncoder(sparkAbsEncoder)
         .withExternalEncoderDiscontinuityPoint(Rotation.of(0.5 ))
         .withExternalEncoderZeroOffset(Degrees.of(-15.0))
