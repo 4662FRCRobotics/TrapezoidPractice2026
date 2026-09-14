@@ -74,13 +74,13 @@ public class ExampleSubsystem extends SubsystemBase {
         // Feedback Constants (PID Constants)
         // kP 1520, kI 0, kD 2600
         // from playing
-        .withClosedLoopController(2, 0, .2)
+        .withClosedLoopController(.6, 0, .2)
         // taking this out takes out maxmotion and uses roborio position
-        .withTrapezoidalProfile(DegreesPerSecond.of(150), DegreesPerSecondPerSecond.of(90))
+        //.withTrapezoidalProfile(DegreesPerSecond.of(250), DegreesPerSecondPerSecond.of(120))
         .withSimClosedLoopController(10, 0, 0)
         // Feedforward Constants
         // from recalc
-        .withFeedforward(new ArmFeedforward(0.02, 0.15, .00, .0))
+        .withFeedforward(new ArmFeedforward(0.05, 0.15, 0.1, .0))
         // .withFeedforward(new ArmFeedforward(0.14, 0, 0))
         .withSimFeedforward(new ArmFeedforward(0.135, 0, 0))
         // Telemetry name and verbosity level
@@ -88,7 +88,7 @@ public class ExampleSubsystem extends SubsystemBase {
         //.withClosedLoopControllerMaximumVoltage(Voltage.ofBaseUnits(2, Volts))
         .withExternalEncoder(sparkAbsEncoder)
         .withExternalEncoderDiscontinuityPoint(Rotation.of(1.0))
-        .withExternalEncoderZeroOffset(Degrees.of(-15.0))
+        .withExternalEncoderZeroOffset(Degrees.of(-20.0))
         .withExternalEncoderInverted(false)
         .withUseExternalFeedbackEncoder(true)
         .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
