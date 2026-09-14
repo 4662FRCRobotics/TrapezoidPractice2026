@@ -87,9 +87,8 @@ public class ExampleSubsystem extends SubsystemBase {
         // not allowed for trapezoidal
         //.withClosedLoopControllerMaximumVoltage(Voltage.ofBaseUnits(2, Volts))
         .withExternalEncoder(sparkAbsEncoder)
-        .withExternalEncoderDiscontinuityPoint(Rotation.of(0.5 ))
+        .withExternalEncoderDiscontinuityPoint(Rotation.of(1.0))
         .withExternalEncoderZeroOffset(Degrees.of(-15.0))
-        //.withExternalEncoderConversionFactor(360.0) // not found now
         .withExternalEncoderInverted(false)
         .withUseExternalFeedbackEncoder(true)
         .withTelemetry("ArmMotor", TelemetryVerbosity.HIGH)
